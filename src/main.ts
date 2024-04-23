@@ -10,7 +10,7 @@ async function fetchCollections() {
     ...localCollections.map(collection => ({ name: collection.name, key: collection.id })),
     ...libraryCollections.map(collection => ({ name: collection.name, key: collection.key })),
   ];
-  console.log(allCollections)
+  console.log(localCollections, "local\n" , libraryCollections, "library")
 
   figma.ui.postMessage({ type: 'COLLECTIONS_FETCHED', collections: allCollections });
 }
@@ -38,7 +38,15 @@ async function getVariablesFromLibrary(libraryCollectionKey: string): Promise<Li
         resolvedType: variable.resolvedType
       }));
     } else {
-      const variables = await figma.teamLibrary.getVariablesInLibraryCollectionAsync(libraryCollectionKey);
+      const libraryCollections = await figma.teamLibrary.getAvailableLibraryVariableCollectionsAsync();
+      const lib = libraryCollections.map(collection => ({ name: collection.name, key: collection.key }))
+      const lib_key = lib.find(collection => collection.name === libraryCollectionKey);
+      if (!lib_key || lib_key.key === undefined) {
+        console.error('Library collection key is undefined');
+        figma.notify('Selected library collection is not available.');
+        return [];
+      }
+      const variables = await figma.teamLibrary.getVariablesInLibraryCollectionAsync(lib_key.key);
       return variables;
     }
   } catch (error) {
@@ -47,6 +55,7 @@ async function getVariablesFromLibrary(libraryCollectionKey: string): Promise<Li
     return [];
   }
 }
+
 
 async function applyVariablesToStyles(variables: LibraryVariable[], colorStyles: PaintStyle[]) {
   let scannedVariables = 0;
@@ -57,6 +66,7 @@ async function applyVariablesToStyles(variables: LibraryVariable[], colorStyles:
       console.clear()
 
       const matchingVariable: LibraryVariable | undefined = variables.find(variable => variable.name === style.name);
+      console.log(variables, "variables\n", style.name)
       if (matchingVariable) {
         const variable = await figma.variables.importVariableByKeyAsync(matchingVariable.key);
         scannedVariables++;

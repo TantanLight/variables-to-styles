@@ -13,9 +13,9 @@ import { useCallback, useEffect, useState } from 'preact/hooks';
 import { ApplyVariablesHandler, CloseHandler } from './types';
 
 function Plugin() {
+  const [isLoading, setIsLoading] = useState(true);
   const [collections, setCollections] = useState<{ name: string; key: string }[]>([]);
   const [selectedCollectionKey, setSelectedCollectionKey] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
